@@ -111,27 +111,37 @@ class Payment {
 
   
 
-  public async sendGHO(){
-    const howMuchTokens = ethers.utils.parseUnits('1', 18)
-    const tx = await this.tokenContract.transfer("0x03DDEBb6470320d6fA0C95763D7f74bB3DA6718F", howMuchTokens)
+  public async sendGHO(receiver:any,sendToken:any){
+    const howMuchTokens = ethers.utils.parseUnits(sendToken, 18)
+    const tx = await this.tokenContract.transfer(receiver, howMuchTokens)
     console.log(tx)
 
   }
 
-  public async borrowGHO(){
+  public async borrowGHO(borrowedTokenCount:any){
     // await this.provider.send('eth_requestAccounts', [])
+    try{
     const aave = new ethers.Contract("0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", AAVE_ABI, this.signer);
     console.log("aave is ",aave)
     const tx = await aave.borrow(
       "0xc4bF5CbDaBE595361438F8c6a187bDc330539c60",
-      ethers.utils.parseUnits("2", 18),
+      ethers.utils.parseUnits(borrowedTokenCount, 18),
       2,
       0,
-      await ethers.utils.getAddress("0x9c8dee368167A1a1A470d3887eec1CFF95599265"),
+      await this.signer.getAddress(),
     );
     console.log("tx is ",tx)
     const transaction = await tx.wait();
     console.log("transaction is ",transaction)
+    return true;
+    }
+    catch(err:any){
+      console.log(err);
+      if(err.message.includes("execution reverted: 34")){
+        return false;
+      }
+      return true;
+    }
   }
 
 

@@ -1,4 +1,6 @@
 import type { MetaMaskInpageProvider } from '@metamask/providers';
+import Payment from './../../../../../ghomni-lib';
+import { BigNumber, ethers } from 'ethers';
 
 import { defaultSnapOrigin } from '../config';
 import type { GetSnapsResponse, Snap } from '../types';
@@ -63,11 +65,51 @@ export const sendHello = async () => {
     params: { snapId: defaultSnapOrigin, request: { method: 'hello' } },
   });
 };
-export const borrowGHO = async () => {
-  await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO' } },
-  });
+//to be replaced by generic processing funcitonality
+export const handleButtonClick = async (userOperation:any) => {
+  console.log("payment object before");
+
+  const payment = new Payment(new ethers.providers.Web3Provider(window.ethereum))
+  console.log("payment object");
+  console.log(payment)
+  switch(userOperation){
+    case "borrow":
+      var res :any= await window.ethereum.request({
+        method: 'wallet_invokeSnap',
+        params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
+          "borrowedTokenCount":"2"
+        } } },
+      });
+      if(res!==null){
+        const operation = res.operation;
+        if(operation==="borrow"){
+          const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
+          if(borrowGHOStatus===false){
+            alert("need funds")
+          }
+          
+    
+        }
+      }
+    case "send":
+      var res :any= await window.ethereum.request({
+        method: 'wallet_invokeSnap',
+        params: { snapId: defaultSnapOrigin, request: { method: 'sendGHO',params:{
+          "sendTokenCount":"5",
+          "receiver":"0xBC671f3d97C466c2E82d7558bfE94171B5101D29"
+        } } },
+      });
+      if(res!==null){
+        const operation = res.operation;
+        if(operation==="send"){
+          await payment.sendGHO(res.receiver,res.sendTokenCount)
+      }
+    }
+    default:
+      return null
+  
+
+}
 };
 
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');

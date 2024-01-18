@@ -1,6 +1,6 @@
 import Payment from '../../../../ghomni-lib';
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
-import {heading,panel, text } from '@metamask/snaps-sdk';
+import {divider, heading,panel, text } from '@metamask/snaps-sdk';
 import type { OnHomePageHandler } from '@metamask/snaps-sdk';
 import { BigNumber, ethers } from 'ethers';
 import { Keyring, KeyringAccount } from '@metamask/keyring-api';
@@ -36,42 +36,79 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       });
 
       case 'borrowGHO':
-        return snap.request({
+        var borrowPayload :any = request.params;
+        console.log("payload is ",borrowPayload)
+        var status= await snap.request({
           method: 'snap_dialog',
           params: {
             type: 'confirmation',
             content: panel([
-              text(`Hello, **${origin}**!`),
-              text('This snap is to Borrow GHO')
+              heading(`Please confirm Borrow details`),
+              divider(),
+              text('Amount : ' + borrowPayload.borrowedTokenCount),
             ]),
           },
         });
+        if(status===true){
+          return {
+            "operation":"borrow",
+            "borrowedTokenCount":borrowPayload.borrowedTokenCount
+          }
+        }
+        else{
+          return null;
+        }
+
+        case 'sendGHO':
+          var sendPayload :any = request.params;
+          var status= await snap.request({
+            method: 'snap_dialog',
+            params: {
+              type: 'confirmation',
+              content: panel([
+                heading(`Please confirm Transfer details`),
+                divider(),
+                text('Amount : ' + sendPayload.sendTokenCount),
+                text('Receiver : ' + sendPayload.receiver),
+              ]),
+            },
+          });
+          if(status===true){
+            return {
+              "operation":"send",
+              "sendTokenCount":sendPayload.sendTokenCount,
+              "receiver":sendPayload.receiver
+            }
+          }
+          else{
+            return null;
+          }
     default:
       throw new Error('Method not found.');
   }
 };
 
-export const onHomePage: OnHomePageHandler = async () => {
-  // const listedAccounts: any = await snap.request({
-  //   method: 'snap_manageAccounts',
-  //   params: {
-  //     method: 'listAccounts'
-  //   },
-  // });
+// export const onHomePage: OnHomePageHandler = async () => {
+//   // const listedAccounts: any = await snap.request({
+//   //   method: 'snap_manageAccounts',
+//   //   params: {
+//   //     method: 'listAccounts'
+//   //   },
+//   // });
 
-  // console.log("listed acc : ",listedAccounts)
-  const provider =  new ethers.providers.Web3Provider(ethereum);
-  const ghoPayment = new Payment(provider)
-  const res = await ghoPayment.borrowGHO();
-  console.log("res is ",res)
+//   // console.log("listed acc : ",listedAccounts)
+//   const provider =  new ethers.providers.Web3Provider(ethereum);
+//   const ghoPayment = new Payment(provider)
+//   // const res = await ghoPayment.borrowGHO();
+//   console.log("res is ",res)
 
-  // const res = await signer.getAddress();
-  // console.log("res is",res)
+//   // const res = await signer.getAddress();
+//   // console.log("res is",res)
 
-  return {
-    content: panel([
-      heading('Hello world!'),
-      text('Welcome to my Snap home page!'),
-    ]),
-  };
-};
+//   return {
+//     content: panel([
+//       heading('Hello world!'),
+//       text('Welcome to my Snap home page!'),
+//     ]),
+//   };
+

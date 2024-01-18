@@ -8,6 +8,7 @@ import {
   SendHelloButton,
   Card,
   BorrowGHOButton,
+  SendGHOButton
 } from '../components';
 import { defaultSnapOrigin } from '../config';
 import { MetamaskActions, MetaMaskContext } from '../hooks';
@@ -16,7 +17,7 @@ import {
   getSnap,
   isLocalSnap,
   sendHello,
-  borrowGHO,
+  handleButtonClick,
   shouldDisplayReconnectButton,
 } from '../utils';
 
@@ -136,12 +137,22 @@ const Index = () => {
   };
   const handleBorrowGHOClick = async () => {
     try {
-      await borrowGHO();
+      await handleButtonClick("borrow");
     } catch (error) {
       console.error(error);
       dispatch({ type: MetamaskActions.SetError, payload: error });
     }
   };
+
+  const handleSendGHOClick = async () => {
+    try {
+      await handleButtonClick("send");
+    } catch (error) {
+      console.error(error);
+      dispatch({ type: MetamaskActions.SetError, payload: error });
+    }
+  };
+
 
   return (
     <Container>
@@ -208,6 +219,25 @@ const Index = () => {
             button: (
               <BorrowGHOButton
                 onClick={handleBorrowGHOClick}
+                disabled={!state.installedSnap}
+              />
+            ),
+          }}
+          disabled={!state.installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(state.installedSnap) &&
+            !shouldDisplayReconnectButton(state.installedSnap)
+          }
+        />
+                <Card
+          content={{
+            title: 'Send GHO',
+            description:
+              'Send GHO tokens',
+            button: (
+              <SendGHOButton
+                onClick={handleSendGHOClick}
                 disabled={!state.installedSnap}
               />
             ),
