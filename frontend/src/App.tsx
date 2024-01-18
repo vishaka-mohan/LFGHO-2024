@@ -139,6 +139,7 @@ function App() {
 
     const nonces = await tokenContract.nonces(accounts[0])
     console.log(parseInt(nonces._hex, 16))
+    // await borrowGHO();
 
   }
 
@@ -174,13 +175,14 @@ function App() {
     const accounts = await provider.send("eth_requestAccounts", [])
     const nonces = await tokenContract.nonces(accounts[0])
     console.log(nonces)
-    const permit = await createPermit(subscriptionContractAddress, ethers.utils.parseUnits('10', 18), parseInt(nonces._hex, 16), 2661766724)
+    //2nd argument is amount of gho contract is permitted to use on behalf of signer -> make it input
+    const permit = await createPermit(subscriptionContractAddress, ethers.utils.parseUnits('100000', 18), parseInt(nonces._hex, 16), 2661766724)
     console.log(permit)
     
 
 
     await allowPermit(subscriptionContractAddress, ethers.utils.parseUnits('10', 18), 2661766724, permit.split)
-
+    //1st argument is receiver -> make it input
     await subscribe("0x03DDEBb6470320d6fA0C95763D7f74bB3DA6718F", ethers.utils.parseUnits('2', 18), 30, 6400)
   }
 
