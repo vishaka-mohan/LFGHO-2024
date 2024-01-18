@@ -5,6 +5,7 @@ import { BigNumber, ethers } from 'ethers';
 import tokenABI from './contract/GHOAbi.json'
 import AAVE_ABI from "./contract/aave_abi"
 import subscriptionABI from './contract/subscriptionABI.json'
+import usdcABI from './contract/usdcABI.json'
 
 function App() {
 
@@ -167,6 +168,27 @@ function App() {
   }
 
 
+  const allowTokenSpending = async () => {
+    const usdc = new ethers.Contract("0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", usdcABI, signer)
+    const accounts = await provider.send("eth_requestAccounts", [])
+    const tx = await usdc.approve("0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", ethers.utils.parseUnits("1000000", 6))
+    await tx.wait()
+  }
+
+  const supplyUSDC = async () => {
+    const aave = new ethers.Contract("0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", AAVE_ABI, signer);
+    const accounts = await provider.send("eth_requestAccounts", [])
+
+      const tx = await aave.supply(
+        "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+        ethers.utils.parseUnits("10000", 6),
+        accounts[0],
+        0,
+      );
+      await tx.wait();
+  }
+
+
   const supplyGHOAsCollateral = async () => {
     //to do
   }
@@ -221,10 +243,14 @@ function App() {
         <li>Integrate subscription with snaps</li>
         <li>Look for other operations like swaps andcross chain stuff with chainlink ccip</li>
         <li>Try to use Family</li>
+        <li>Note that a new user has to first approve the aave pool contract to use their usdc tokens. so click approve usdc first. then they need to supply usdc into the pool. after that they can borrow GHO.</li>
       </ol>
 
       <button onClick={executePermit}>Click to Subscribe</button>
       <button onClick={executeAllPayments}>Click to execute All payments</button>
+      <button onClick={supplyUSDC}>Click to supply USDC</button>
+      <button onClick={borrowGHO}>Click to borrow GHO</button>
+      <button onClick={allowTokenSpending}>Click to approve USDC</button>
 
 
       
