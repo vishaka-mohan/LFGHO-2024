@@ -6,6 +6,7 @@ import tokenABI from './contract/GHOAbi.json'
 import AAVE_ABI from "./contract/aave_abi"
 import subscriptionABI from './contract/subscriptionABI.json'
 import usdcABI from './contract/usdcABI.json'
+import usdcVariableDebtABI from './contract/usdcVariableDebtABI.json'
 
 function App() {
 
@@ -13,6 +14,8 @@ function App() {
   const ghoContractAddress = "0xc4bF5CbDaBE595361438F8c6a187bDc330539c60"
   const signer = provider.getSigner()
   var tokenContract = new ethers.Contract(ghoContractAddress, tokenABI, signer)
+
+  const usdcDebtTokenAddress = "0x54bdE009156053108E73E2401aEA755e38f92098"
   
   //variables for subscription signature
   const domainName = "Gho Token" // put your token name 
@@ -33,11 +36,28 @@ function App() {
     verifyingContract: contractAddress,
     chainId: chainId
   }
+
+
+  const domainDelegation = {
+    name: "Aave Ethereum Variable Debt USDC",
+    version: domainVersion,
+    verifyingContract: usdcDebtTokenAddress,
+    chainId: chainId
+  }
   
   const types = {
     Permit: [
       { name: "owner", type: "address" },
       { name: "spender", type: "address" },
+      { name: "value", type: "uint256" },
+      { name: "nonce", type: "uint256" },
+      { name: "deadline", type: "uint256" }
+    ]
+  }
+  const typesDelegation = {
+    Delegation: [
+      { name: "delegator", type: "address" },
+      { name: "delegatee", type: "address" },
       { name: "value", type: "uint256" },
       { name: "nonce", type: "uint256" },
       { name: "deadline", type: "uint256" }
@@ -57,6 +77,13 @@ function App() {
   const signTyped = async (dataToSign: any) => {
     // call this method to sign EIP 712 data
     const rawSig = await signer._signTypedData(domain, types, dataToSign)
+    console.log(rawSig)
+    return rawSig
+  }
+
+  const signTypedDelegation = async (dataToSign: any) => {
+    // call this method to sign EIP 712 data
+    const rawSig = await signer._signTypedData(domainDelegation, typesDelegation, dataToSign)
     console.log(rawSig)
     return rawSig
   }
@@ -160,7 +187,7 @@ function App() {
       ethers.utils.parseUnits("2", 18),
       2,
       0,
-      await signer.getAddress(),
+      "0xB0138E967807ccdA91a7aA9abd1d2183cC3D2260",
     );
     const transaction = await tx.wait();
     console.log(transaction)
@@ -188,9 +215,6 @@ function App() {
   }
 
 
-  const supplyGHOAsCollateral = async () => {
-    //to do
-  }
 
   const executePermit = async () => {
     const accounts = await provider.send("eth_requestAccounts", [])
@@ -217,6 +241,74 @@ function App() {
   const executeAllPayments = async () => {
     const tx = await subscriptionContract.executeAllPayments()
     console.log(tx)
+  }
+
+
+  async function createPermitForDelegation(delegatee: any, nonce: any, value: any, deadline: any) {
+
+    
+    const accounts = await provider.send("eth_requestAccounts", [])
+  
+    const dataToSign = {
+      delegator: accounts[0],
+      delegatee: delegatee,
+      value: value,
+      nonce: nonce,
+      deadline: deadline
+    }
+
+    const signature = await signTypedDelegation(dataToSign)
+    const split = await splitSig(signature)
+
+    const recovered = ethers.utils.verifyTypedData(
+      domainDelegation,
+      typesDelegation,
+      dataToSign,
+      split
+    );
+      console.log(recovered)
+    return {
+       split, signature
+    }
+  }
+
+
+  const allowDelegation = async (delegatee: any, value: any, deadline: any) => {
+    const accounts = await provider.send("eth_requestAccounts", [])
+    const gasPrice = await provider.getGasPrice()
+
+
+    const usdcDebtToken = new ethers.Contract("0x54bdE009156053108E73E2401aEA755e38f92098", usdcVariableDebtABI, signer);
+    console.log(usdcDebtToken)
+
+    let tx = await usdcDebtToken.approveDelegation(
+     
+      delegatee,
+      value,
+  
+    );
+  
+    await tx.wait(2) //wait 2 blocks after tx is confirmed
+    console.log(tx)
+
+  
+  }
+
+  const executeDelegation = async () => {
+    
+    const usdcDebtToken = new ethers.Contract("0x54bdE009156053108E73E2401aEA755e38f92098", usdcVariableDebtABI, signer)
+    const accounts = await provider.send("eth_requestAccounts", [])
+    const nonces = await usdcDebtToken.nonces(accounts[0])
+    
+    console.log(parseInt(nonces._hex, 16))
+    // const permit = await createPermitForDelegation("0x050d6fE32A00e60CD9B2ccDA94D6A549d9a30838", ethers.utils.parseUnits('100', 6), parseInt(nonces._hex, 16), 2661766724)
+    // console.log(permit)
+    
+
+
+    await allowDelegation("0x050d6fE32A00e60CD9B2ccDA94D6A549d9a30838", ethers.utils.parseUnits("100", 6), 2661766724)
+
+    
   }
 
   useEffect(() => {
@@ -249,7 +341,7 @@ function App() {
       <button onClick={supplyUSDC}>Click to supply USDC</button>
       <button onClick={borrowGHO}>Click to borrow GHO</button>
       <button onClick={allowTokenSpending}>Click to approve USDC</button>
-
+      <button onClick={executeDelegation}>Click to delegate</button>
 
       
     </div>
