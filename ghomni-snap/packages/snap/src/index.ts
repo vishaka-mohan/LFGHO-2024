@@ -83,6 +83,29 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
           else{
             return null;
           }
+
+          case 'supplyGHO':
+            var supplyPayload :any = request.params;
+            var status= await snap.request({
+              method: 'snap_dialog',
+              params: {
+                type: 'confirmation',
+                content: panel([
+                  heading(`Looks like you do not have enough collateral in the pool to borrow GHO, please confirm to deposit USDC collateral`),
+                  divider(),
+                  text('Deposit : ' + supplyPayload.supplyTokenCount),
+                ]),
+              },
+            });
+            if(status===true){
+              return {
+                "operation":"supply",
+                "supplyTokenCount":supplyPayload.supplyTokenCount,
+              }
+            }
+            else{
+              return null;
+            }
     default:
       throw new Error('Method not found.');
   }

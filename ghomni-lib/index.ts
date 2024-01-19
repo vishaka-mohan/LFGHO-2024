@@ -2,6 +2,7 @@ import {ethers } from 'ethers';
 import tokenABI from "./contract/GHOAbi.json"
 import subscriptionABI from "./contract/subscriptionABI.json"
 import AAVE_ABI from "./contract/aave_abi"
+import usdcABI from './contract/usdcABI.json'
 
 class Payment {
 
@@ -142,6 +143,26 @@ class Payment {
       }
       return true;
     }
+  }
+
+  public async permitTokenSpend() {
+    const usdc = new ethers.Contract("0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", usdcABI, this.signer)
+    const accounts = await this.provider.send("eth_requestAccounts", [])
+    const tx = await usdc.approve("0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", ethers.utils.parseUnits("1000000", 6))
+    await tx.wait()
+  }
+
+  public async  supplyUSDC(supplyCount:any){
+    const aave = new ethers.Contract("0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", AAVE_ABI, this.signer);
+    const accounts = await this.provider.send("eth_requestAccounts", [])
+      //supply USDC to aave contract
+      const tx = await aave.supply(
+        "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+        ethers.utils.parseUnits(supplyCount, 6),
+        accounts[0],
+        0,
+      );
+      await tx.wait();
   }
 
 

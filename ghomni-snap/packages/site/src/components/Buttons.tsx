@@ -105,6 +105,10 @@ export const SendGHOButton = (props: ComponentProps<typeof Button>) => {
   return <Button {...props}>Send GHO</Button>;
 };
 
+export const SupplyGHOButton = (props: ComponentProps<typeof Button>) => {
+  return <Button {...props}>Supply GHO</Button>;
+};
+
 export const HeaderButtons = ({
   state,
   onConnectClick,

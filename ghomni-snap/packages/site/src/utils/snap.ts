@@ -90,6 +90,7 @@ export const handleButtonClick = async (userOperation:any) => {
           
     
         }
+        return;
       }
     case "send":
       var res :any= await window.ethereum.request({
@@ -104,6 +105,23 @@ export const handleButtonClick = async (userOperation:any) => {
         if(operation==="send"){
           await payment.sendGHO(res.receiver,res.sendTokenCount)
       }
+      return;
+    }
+    case "supply":
+      //will make it a x% incrememnet of borrow amount
+      var res :any= await window.ethereum.request({
+        method: 'wallet_invokeSnap',
+        params: { snapId: defaultSnapOrigin, request: { method: 'supplyGHO',params:{
+          "supplyTokenCount":"100",
+        } } },
+      });
+      if(res!==null){
+        const operation = res.operation;
+        if(operation==="supply"){
+          await payment.permitTokenSpend()
+          await payment.supplyUSDC(res.supplyTokenCount)
+      }
+      return;
     }
     default:
       return null
