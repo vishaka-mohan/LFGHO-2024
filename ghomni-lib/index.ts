@@ -138,17 +138,17 @@ class Payment {
     }
     catch(err:any){
       console.log(err);
-      if(err.message.includes("execution reverted: 34")){
+      if(err.message.includes("execution reverted")){
         return false;
       }
       return true;
     }
   }
 
-  public async permitTokenSpend() {
+  public async permitTokenSpend(maxSpend) {
     const usdc = new ethers.Contract("0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", usdcABI, this.signer)
     const accounts = await this.provider.send("eth_requestAccounts", [])
-    const tx = await usdc.approve("0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", ethers.utils.parseUnits("1000000", 6))
+    const tx = await usdc.approve("0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", ethers.utils.parseUnits(maxSpend.toString(), 6))
     await tx.wait()
   }
 

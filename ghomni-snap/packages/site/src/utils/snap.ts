@@ -55,6 +55,22 @@ export const getSnap = async (version?: string): Promise<Snap | undefined> => {
   }
 };
 
+
+async function getServerResponse(userPrompt: any) {
+  
+  const payload = {
+    user_prompt: userPrompt,
+  };
+  const response = await fetch(`http://127.0.0.1:8000/processPrompt`, {
+    method: 'POST',
+    headers: new Headers({
+      'content-type': 'application/json',
+    }),
+    body: JSON.stringify(payload),
+  });
+  return response.json();
+}
+
 /**
  * Invoke the "hello" method from the example snap.
  */
@@ -65,6 +81,60 @@ export const sendHello = async () => {
     params: { snapId: defaultSnapOrigin, request: { method: 'hello' } },
   });
 };
+export const handleInstruction = async () => {
+  const payment = new Payment(new ethers.providers.Web3Provider(window.ethereum))
+
+  const userPrompt = await window.ethereum.request({
+    method: 'wallet_invokeSnap',
+    params: { snapId: defaultSnapOrigin, request: { method: 'process_instruction' } },
+  });
+  const serverResponse = await getServerResponse(userPrompt);
+  const operation = serverResponse.function_name;
+  if(operation==='borrow_gho'){
+    var res :any= await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
+        "borrowedTokenCount":serverResponse.amount
+      } } },
+    });
+    if(res!==null){
+        const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
+        if(borrowGHOStatus===false){
+          var collateralAmount = (2*parseInt(res.borrowedTokenCount, 10)).toString(); // You want to use radix 10
+
+          //trigger supply flow
+          var res :any= await window.ethereum.request({
+            method: 'wallet_invokeSnap',
+            params: { snapId: defaultSnapOrigin, request: { method: 'supplyGHO',params:{
+              "supplyTokenCount":collateralAmount,
+            } } },
+          });
+          if(res!==null){
+            await payment.permitTokenSpend(collateralAmount)
+            await payment.supplyUSDC(res.supplyTokenCount)  
+            //trigger borrow again
+            var res :any= await window.ethereum.request({
+              method: 'wallet_invokeSnap',
+              params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
+                "borrowedTokenCount":serverResponse.amount
+              } } },
+            });
+
+            if(res!=null){
+              const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
+              return;
+            }
+        }
+    }
+  }
+  else if(operation==='send_funds_to_address'){
+
+  }
+  else if(operation==='setup_recurring_payments'){
+
+  }
+};
+}
 //to be replaced by generic processing funcitonality
 export const handleButtonClick = async (userOperation:any) => {
   console.log("payment object before");
@@ -118,7 +188,7 @@ export const handleButtonClick = async (userOperation:any) => {
       if(res!==null){
         const operation = res.operation;
         if(operation==="supply"){
-          await payment.permitTokenSpend()
+          await payment.permitTokenSpend(100)
           await payment.supplyUSDC(res.supplyTokenCount)
       }
       return;
