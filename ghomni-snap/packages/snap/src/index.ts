@@ -35,6 +35,19 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
         },
       });
 
+      case 'process_instruction':
+        var prompt= await snap.request({
+          method: 'snap_dialog',
+          params: {
+            type: 'prompt',
+            content: panel([
+              heading(`How can I help you`),
+            ]),
+          },
+        });
+        
+        return prompt;
+
       case 'borrowGHO':
         var borrowPayload :any = request.params;
         console.log("payload is ",borrowPayload)
