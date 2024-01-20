@@ -7,6 +7,7 @@ import AAVE_ABI from "./contract/aave_abi"
 import subscriptionABI from './contract/subscriptionABI.json'
 import usdcABI from './contract/usdcABI.json'
 import usdcVariableDebtABI from './contract/usdcVariableDebtABI.json'
+import ccipTokenTransferABI from './contract/ccipTokenTransferABI.json'
 
 function App() {
 
@@ -118,7 +119,7 @@ function App() {
     const accounts = await provider.send("eth_requestAccounts", [])
     const gasPrice = await provider.getGasPrice()
     console.log(accounts[0])
-    let tx = await tokenContract.connect(signer).permit(
+    let tx = await tokenContract.permit(
       accounts[0],
       spender,
       value,
@@ -127,7 +128,7 @@ function App() {
       sig.r,
       sig.s, {
         gasPrice: gasPrice,
-        gasLimit: 80000 //hardcoded gas limit; change if needed
+        gasLimit: 100000 //hardcoded gas limit; change if needed
       }
     );
   
@@ -173,9 +174,9 @@ function App() {
 
   
 
-  const sendGHO = async () => {
-    const howMuchTokens = ethers.utils.parseUnits('1', 18)
-    const tx = await tokenContract.transfer("0x03DDEBb6470320d6fA0C95763D7f74bB3DA6718F", howMuchTokens)
+  const sendGHO = async (howMuchTokens: any, destinationAddress : any) => {
+    
+    const tx = await tokenContract.transfer(destinationAddress, howMuchTokens)
     console.log(tx)
 
   }
@@ -222,7 +223,7 @@ function App() {
     const nonces = await tokenContract.nonces(accounts[0])
     console.log(nonces)
     //2nd argument is amount of gho contract is permitted to use on behalf of signer -> make it input
-    const permit = await createPermit(subscriptionContractAddress, ethers.utils.parseUnits('100000', 18), parseInt(nonces._hex, 16), 2661766724)
+    const permit = await createPermit(subscriptionContractAddress, ethers.utils.parseUnits('100', 18), parseInt(nonces._hex, 16), 2661766724)
     console.log(permit)
     
 
@@ -313,6 +314,44 @@ function App() {
     
   }
 
+  const sendEthToContract = async () => {
+    const tx = await signer.sendTransaction({
+      to: '0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318',
+      value: ethers.utils.parseUnits('0.01', 'ether'),
+    });
+    console.log(tx)
+  }
+
+
+  //ideally iske function parameters mein source chain destination chain aur amount hona chahiye 
+  //the source account first has to supply some link as well as gho to the smart contract
+  //usmein se they can then choose kitna to transfer to another account/same account in another chain
+  //
+  const transferGHOCrossChain = async () => {
+
+    const accounts = await provider.send("eth_requestAccounts", [])
+    const chainLinkTokenTransferContract = new ethers.Contract("0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318", ccipTokenTransferABI, signer)
+    //send GHO to contract
+    //hard coding how much to send to the contract now
+    // await sendGHO(ethers.utils.parseUnits('4', 18),"0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318")
+
+    // //send eth to contract
+    // await sendEthToContract()
+
+    //call transferTokenPayNative of chainlink contract
+    let tx = await chainLinkTokenTransferContract.transferTokensPayNative(
+      
+      "3478487238524512106",
+      accounts[0],
+      ghoContractAddress,
+      ethers.utils.parseUnits('1', 18)
+    )
+  
+    await tx.wait(2) //wait 2 blocks after tx is confirmed
+    console.log(tx)
+
+  }
+
   useEffect(() => {
 
    
@@ -344,6 +383,7 @@ function App() {
       <button onClick={borrowGHO}>Click to borrow GHO</button>
       <button onClick={allowTokenSpending}>Click to approve USDC</button>
       <button onClick={executeDelegation}>Click to delegate</button>
+      <button onClick={transferGHOCrossChain}>Click to transfer GHO from Sepolia to Arbitrum Sepolia</button>
 
       
     </div>
