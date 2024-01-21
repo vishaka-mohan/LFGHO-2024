@@ -1,5 +1,9 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import styled from 'styled-components';
+import { BigNumber, ethers } from 'ethers';
+import Payment from './../../../../../ghomni-lib';
+import { RotatingLines } from 'react-loader-spinner'
+import { ConnectKitButton } from 'connectkit';
 
 import {
   ConnectButton,
@@ -19,7 +23,6 @@ import {
   getSnap,
   isLocalSnap,
   sendHello,
-  handleInstruction,
   handleButtonClick,
   shouldDisplayReconnectButton,
 } from '../utils';
@@ -110,7 +113,7 @@ const ErrorMessage = styled.div`
 
 const Index = () => {
   const [state, dispatch] = useContext(MetaMaskContext);
-
+  const [loading,setLoading] = useState(false)
   const isMetaMaskReady = isLocalSnap(defaultSnapOrigin)
     ? state.isFlask
     : state.snapsDetected;
@@ -129,6 +132,128 @@ const Index = () => {
       dispatch({ type: MetamaskActions.SetError, payload: error });
     }
   };
+
+  async function getServerResponse(userPrompt: any) {
+  
+    const payload = {
+      user_prompt: userPrompt,
+    };
+    const response = await fetch(`http://127.0.0.1:8000/processPrompt`, {
+      method: 'POST',
+      headers: new Headers({
+        'content-type': 'application/json',
+      }),
+      body: JSON.stringify(payload),
+    });
+    return response.json();
+  }
+
+   const handleInstruction = async () => {
+    const payment = new Payment(new ethers.providers.Web3Provider(window.ethereum))
+    const userPrompt = await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: { snapId: defaultSnapOrigin, request: { method: 'process_instruction' } },
+    });
+    const serverResponse = await getServerResponse(userPrompt);
+    console.log("server response is ",serverResponse)
+    const operation = serverResponse.function_name;
+    console.log("server is ",serverResponse)
+    console.log("operation is",operation)
+    if(operation==='borrow_gho'){
+      setLoading(true);
+      var res :any= await window.ethereum.request({
+        method: 'wallet_invokeSnap',
+        params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
+          "borrowedTokenCount":serverResponse.amount
+        } } },
+      });
+      setLoading(false)
+      if(res!==null){
+          setLoading(true);
+          const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
+          setLoading(false);
+          if(borrowGHOStatus===false){
+            var collateralAmount = (2*parseInt(res.borrowedTokenCount, 10)).toString(); // You want to use radix 10
+  
+            //trigger supply flow
+            var res :any= await window.ethereum.request({
+              method: 'wallet_invokeSnap',
+              params: { snapId: defaultSnapOrigin, request: { method: 'supplyGHO',params:{
+                "supplyTokenCount":collateralAmount,
+              } } },
+            });
+            if(res!==null){
+              setLoading(true);
+              await payment.permitTokenSpend(collateralAmount)
+              await payment.supplyUSDC(res.supplyTokenCount) 
+              setLoading(false); 
+              //trigger borrow again
+              var res :any= await window.ethereum.request({
+                method: 'wallet_invokeSnap',
+                params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
+                  "borrowedTokenCount":serverResponse.amount
+                } } },
+              });
+  
+              if(res!=null){
+                const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
+                return;
+              }
+          }
+      }
+    }
+  
+   
+  }
+  else if(operation==='send_funds_to_address'){
+    var res :any= await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: { snapId: defaultSnapOrigin, request: { method: 'sendGHO',params:{
+        "sendTokenCount":serverResponse.amount,
+        "receiver":serverResponse.receiver_address
+      } } },
+    });
+    if(res!==null){
+      //  var receiverAddress = await resolveENSAddress(serverResponse.receiver_address)
+  
+        await payment.sendGHO(res.receiver,res.sendTokenCount)
+    }
+  }
+  else if(operation==='setup_recurring_payments'){
+    var res :any= await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: { snapId: defaultSnapOrigin, request: { method: 'sendGHORecurring',params:{
+        "amount":serverResponse.amount,
+        "receiver_address":serverResponse.receiver_address,
+        "frequency":serverResponse.frequency,
+        "end_time":serverResponse.end_time,
+      } } },
+      
+  
+      
+    });
+    if(res!==null){
+  
+        await payment.setupRecurringPayment(serverResponse.receiver_address,serverResponse.amount,Number(serverResponse.frequency),Number(serverResponse.end_time));
+    }
+  }
+  else if(operation==='transfer_crosschain'){
+    var res :any= await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: { snapId: defaultSnapOrigin, request: { method: 'transfer_crosschain',params:{
+        "amount":serverResponse.amount,
+        "address":serverResponse.address,
+        "chain":serverResponse.chain,
+      } } },
+    });
+    console.log("res is ",res)
+    if(res!==null){
+      await payment.transferGHOCrossChain(serverResponse.amount,serverResponse.address);
+    }
+
+  }
+
+  }
 
   
   
@@ -180,13 +305,28 @@ const Index = () => {
 
 
   return (
+    
     <Container>
-      <Heading>
-        Welcome to <Span>template-snap</Span>
-      </Heading>
-      <Subtitle>
-        Get started by editing <code>src/index.ts</code>
-      </Subtitle>
+    {loading ? (
+        <div>
+  <RotatingLines
+  visible={true}
+  height="96"
+  width="96"
+  color="grey"
+  strokeWidth="5"
+  animationDuration="0.75"
+  ariaLabel="rotating-lines-loading"
+  wrapperStyle={{}}
+  wrapperClass=""
+  />
+        {/* <Heading>
+      <Span>Please wait while we process your request</Span>
+      </Heading> */}
+        </div>
+      ) : null}
+
+
       <CardContainer>
         {state.error && (
           <ErrorMessage>
@@ -220,27 +360,11 @@ const Index = () => {
             disabled={!isMetaMaskReady}
           />
         )}
-        {shouldDisplayReconnectButton(state.installedSnap) && (
-          <Card
-            content={{
-              title: 'Reconnect',
-              description:
-                'While connected to a local running snap this button will always be displayed in order to update the snap if a change is made.',
-              button: (
-                <ReconnectButton
-                  onClick={handleConnectClick}
-                  disabled={!state.installedSnap}
-                />
-              ),
-            }}
-            disabled={!state.installedSnap}
-          />
-        )}
-          <Card
+        <div style={{paddingLeft:'170px',paddingTop:'100px'}}>
+          <Card 
           content={{
-            title: 'Instruct',
-            description:
-              'Instruct',
+            title: 'How can I assist you',
+            description:'',
             button: (
               <InstructButton
                 onClick={handleInstructClick}
@@ -255,73 +379,21 @@ const Index = () => {
             !shouldDisplayReconnectButton(state.installedSnap)
           }
         />
-        <Card
-          content={{
-            title: 'Borrow GHO',
-            description:
-              'Borrow GHO tokens',
-            button: (
-              <BorrowGHOButton
-                onClick={handleBorrowGHOClick}
-                disabled={!state.installedSnap}
-              />
-            ),
-          }}
-          disabled={!state.installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(state.installedSnap) &&
-            !shouldDisplayReconnectButton(state.installedSnap)
-          }
-        />
-                <Card
-          content={{
-            title: 'Send GHO',
-            description:
-              'Send GHO tokens',
-            button: (
-              <SendGHOButton
-                onClick={handleSendGHOClick}
-                disabled={!state.installedSnap}
-              />
-            ),
-          }}
-          disabled={!state.installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(state.installedSnap) &&
-            !shouldDisplayReconnectButton(state.installedSnap)
-          }
-        />
-          <Card
-          content={{
-            title: 'Supply GHO',
-            description:
-              'supply GHO tokens',
-            button: (
-              <SupplyGHOButton
-                onClick={handleSupplyGHOClick}
-                disabled={!state.installedSnap}
-              />
-            ),
-          }}
-          disabled={!state.installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(state.installedSnap) &&
-            !shouldDisplayReconnectButton(state.installedSnap)
-          }
-        />
-        <Notice>
-          <p>
-            Please note that the <b>snap.manifest.json</b> and{' '}
-            <b>package.json</b> must be located in the server root directory and
-            the bundle must be hosted at the location specified by the location
-            field.
-          </p>
-        </Notice>
+        </div>
+      
       </CardContainer>
+        {/* <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+      }}
+    >
+      <ConnectKitButton />
+    </div> */}
     </Container>
+    
   );
 };
 

@@ -333,10 +333,10 @@ function App() {
     const chainLinkTokenTransferContract = new ethers.Contract("0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318", ccipTokenTransferABI, signer)
     //send GHO to contract
     //hard coding how much to send to the contract now
-    // await sendGHO(ethers.utils.parseUnits('4', 18),"0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318")
+    await sendGHO(ethers.utils.parseUnits('4', 18),"0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318")
 
     // //send eth to contract
-    // await sendEthToContract()
+    await sendEthToContract()
 
     //call transferTokenPayNative of chainlink contract
     let tx = await chainLinkTokenTransferContract.transferTokensPayNative(

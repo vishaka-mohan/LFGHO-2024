@@ -5,6 +5,10 @@ import { ThemeProvider } from 'styled-components';
 import { dark, light } from './config/theme';
 import { MetaMaskProvider } from './hooks';
 import { getThemePreference, setLocalStorage } from './utils';
+import { WagmiConfig, createConfig } from 'wagmi';
+import { mainnet, polygon, optimism, arbitrum } from 'wagmi/chains';
+import { ConnectKitProvider, getDefaultConfig } from 'connectkit';
+
 
 export type RootProps = {
   children: ReactNode;
