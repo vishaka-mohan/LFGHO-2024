@@ -41,7 +41,7 @@ const payment = new Payment(new ethers.providers.Web3Provider(window.ethereum))
 
 ### Send GHO token to a given address
 ```console
- payment.send(receiver_address,numberOfGHOToken)
+ payment.sendGHO(receiverAddress,numberOfGHOToken)
 ```
 
 ### Borrow GHO from liquidity pool
@@ -59,7 +59,7 @@ const borrowGHOStatus = await payment.borrowGHO(tokensToBeBorrowed)
   await payment.allowDelegation(delegateeAddress,amountToBeDelegated,deadline)
 ```
 
-### Cross Chain Transfer (supports Arbitrum Sepolia as of now)
+### Cross Chain Transfer (supports transfer from Ethereum Sepolia to Arbitrum Sepolia as of now)
 ```console
   await payment.transferGHOCrossChain(amountToTransfer,receiverAddress)
 ```

@@ -20,7 +20,7 @@ Transfer GHO Cross-Chain: Expand the scope of GHO transactions by facilitating c
 
 Credit Delegation: Empower users with the ability to delegate credit seamlessly
 
-We have demonstrated one use of the SDK by enabling users to perform all GHO-related actions directly within Metamask wallet using Snaps with a natural language interface. Users can now execute transactions effortlessly by typing simple instructions like "borrow 10 GHO." and SDK abstracts away the complexities of navigating lending pool sites, supplying collateral, and borrowing GHO, providing users with a frictionless experience.
+
 
 ## Installation
 
@@ -42,8 +42,14 @@ const payment = new Payment(new ethers.providers.Web3Provider(window.ethereum))
 
 ### Send GHO token to a given address
 ```console
- payment.send(receiver_address,numberOfGHOToken)
+ payment.sendGHO(receiverAddress,numberOfGHOToken)
 ```
+
+### Supply collateral to the pool (Supports USDC as collateral as of now)
+```console
+ payment.supplyUSDC(collateralAmount)
+```
+
 
 ### Borrow GHO from liquidity pool
 ```console
@@ -60,7 +66,13 @@ const borrowGHOStatus = await payment.borrowGHO(tokensToBeBorrowed)
   await payment.allowDelegation(delegateeAddress,amountToBeDelegated,deadline)
 ```
 
-### Cross Chain Transfer (supports Arbitrum Sepolia as of now)
+### Cross Chain Transfer (supports transfer from Ethereum Sepolia to Arbitrum Sepolia as of now)
 ```console
   await payment.transferGHOCrossChain(amountToTransfer,receiverAddress)
 ```
+
+### 
+```console
+  await createPermit(spender: any, value: any, nonce: any, deadline: any) nonce sab dena hai na isme
+```
+
