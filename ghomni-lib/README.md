@@ -29,8 +29,38 @@ npm i ghomni-lib
 ```
 
 ## Usage
-```console
 
+### Import Payment Module
+```console
+import Payment from 'ghomni-lib'
+```
+
+### Instantiate Payment Object
+```console
 const payment = new Payment(new ethers.providers.Web3Provider(window.ethereum))
-const borrowGHOStatus = await payment.borrowGHO(10)
+```
+
+### Send GHO token to a given address
+```console
+ payment.send(receiver_address,numberOfGHOToken)
+```
+
+### Borrow GHO from liquidity pool
+```console
+const borrowGHOStatus = await payment.borrowGHO(tokensToBeBorrowed)
+```
+
+### Setup recurring payment to a given address at specified intervals
+```console
+ await payment.setupRecurringPayment(receiver,subscriptionAmount,frequency,endTime)
+```
+
+### Allow credit delegation to a given address
+```console
+  await payment.allowDelegation(delegateeAddress,amountToBeDelegated,deadline)
+```
+
+### Cross Chain Transfer (supports Arbitrum Sepolia as of now)
+```console
+  await payment.transferGHOCrossChain(amountToTransfer,receiverAddress)
 ```

@@ -61,7 +61,7 @@ function_descriptions = [
             "properties": {
                 "amount": {
                     "type": "string",
-                    "description": "The amount of GHO token to be borrowed, e.g. 10 GHO",
+                    "description": "The amount of GHO token to be borrowed,return only a number. e.g. 10 ",
                 },
             },
             "required": ["amount"],
@@ -163,6 +163,7 @@ async def generate(request: PromptRequest):
             response = process_prompt(user_prompt)
         response_obj = json.loads(response.function_call.arguments)
         response_obj["function_name"] = response.function_call.name
+        print("returning ", response_obj)
         return response_obj
     except Exception as e:
         print("Unexpected error occurred ", e)

@@ -136,14 +136,11 @@ class Payment {
   public async sendGHO(receiver:any,sendToken:any){
     const howMuchTokens = ethers.utils.parseUnits(sendToken, 18)
     const tx = await this.tokenContract.transfer(receiver, howMuchTokens)
-    console.log(tx)
-
   }
 
   public async borrowGHO(borrowedTokenCount:any){
     try{
     const aave = new ethers.Contract("0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", AAVE_ABI, this.signer);
-    console.log("aave is ",aave)
     const tx = await aave.borrow(
       "0xc4bF5CbDaBE595361438F8c6a187bDc330539c60",
       ethers.utils.parseUnits(borrowedTokenCount, 18),
@@ -151,9 +148,7 @@ class Payment {
       0,
       await this.signer.getAddress(),
     );
-    console.log("tx is ",tx)
     const transaction = await tx.wait();
-    console.log("transaction is ",transaction)
     return true;
     }
     catch(err:any){
@@ -302,8 +297,11 @@ class Payment {
     const chainLinkTokenTransferContract = new ethers.Contract("0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318", ccipTokenTransferABI, this.signer)
     console.log("setting contract after")
 
-    // await this.sendGHO("0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318",transferAmount)
-    // await this.sendEthToContract()
+    await this.sendGHO("0xA38318aF1B3c6E29C293b0aaDf23b23984D0d318",transferAmount)
+    console.log("send gho finished");
+
+    await this.sendEthToContract()
+    console.log("send eth finished");
 
     //call transferTokenPayNative of chainlink contract
     let tx = await chainLinkTokenTransferContract.transferTokensPayNative(
@@ -314,6 +312,7 @@ class Payment {
     )
     await tx.wait(2) 
     console.log(tx)
+    console.log("finished");
   }
 }
 
