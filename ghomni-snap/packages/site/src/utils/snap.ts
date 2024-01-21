@@ -81,60 +81,99 @@ export const sendHello = async () => {
     params: { snapId: defaultSnapOrigin, request: { method: 'hello' } },
   });
 };
-export const handleInstruction = async () => {
-  const payment = new Payment(new ethers.providers.Web3Provider(window.ethereum))
 
-  const userPrompt = await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: { snapId: defaultSnapOrigin, request: { method: 'process_instruction' } },
-  });
-  const serverResponse = await getServerResponse(userPrompt);
-  const operation = serverResponse.function_name;
-  if(operation==='borrow_gho'){
-    var res :any= await window.ethereum.request({
-      method: 'wallet_invokeSnap',
-      params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
-        "borrowedTokenCount":serverResponse.amount
-      } } },
-    });
-    if(res!==null){
-        const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
-        if(borrowGHOStatus===false){
-          var collateralAmount = (2*parseInt(res.borrowedTokenCount, 10)).toString(); // You want to use radix 10
-
-          //trigger supply flow
-          var res :any= await window.ethereum.request({
-            method: 'wallet_invokeSnap',
-            params: { snapId: defaultSnapOrigin, request: { method: 'supplyGHO',params:{
-              "supplyTokenCount":collateralAmount,
-            } } },
-          });
-          if(res!==null){
-            await payment.permitTokenSpend(collateralAmount)
-            await payment.supplyUSDC(res.supplyTokenCount)  
-            //trigger borrow again
-            var res :any= await window.ethereum.request({
-              method: 'wallet_invokeSnap',
-              params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
-                "borrowedTokenCount":serverResponse.amount
-              } } },
-            });
-
-            if(res!=null){
-              const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
-              return;
-            }
-        }
-    }
-  }
-  else if(operation==='send_funds_to_address'){
-
-  }
-  else if(operation==='setup_recurring_payments'){
-
-  }
-};
+const resolveENSAddress = async (rec_address: any) => {
+  const goerli_provider = new ethers.providers.JsonRpcProvider("https://eth-goerli.public.blastapi.io");
+  console.log("resolved address is ",rec_address)
+  const address = await goerli_provider.resolveName(rec_address.trim())
+  return address
 }
+
+// export const handleInstruction = async () => {
+//   const payment = new Payment(new ethers.providers.Web3Provider(window.ethereum))
+
+//   const userPrompt = await window.ethereum.request({
+//     method: 'wallet_invokeSnap',
+//     params: { snapId: defaultSnapOrigin, request: { method: 'process_instruction' } },
+//   });
+//   const serverResponse = await getServerResponse(userPrompt);
+//   console.log("server response is ",serverResponse)
+//   const operation = serverResponse.function_name;
+//   console.log("server is ",serverResponse)
+//   console.log("operation is",operation)
+//   if(operation==='borrow_gho'){
+//     var res :any= await window.ethereum.request({
+//       method: 'wallet_invokeSnap',
+//       params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
+//         "borrowedTokenCount":serverResponse.amount
+//       } } },
+//     });
+//     if(res!==null){
+//         const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
+//         if(borrowGHOStatus===false){
+//           var collateralAmount = (2*parseInt(res.borrowedTokenCount, 10)).toString(); // You want to use radix 10
+
+//           //trigger supply flow
+//           var res :any= await window.ethereum.request({
+//             method: 'wallet_invokeSnap',
+//             params: { snapId: defaultSnapOrigin, request: { method: 'supplyGHO',params:{
+//               "supplyTokenCount":collateralAmount,
+//             } } },
+//           });
+//           if(res!==null){
+//             await payment.permitTokenSpend(collateralAmount)
+//             await payment.supplyUSDC(res.supplyTokenCount)  
+//             //trigger borrow again
+//             var res :any= await window.ethereum.request({
+//               method: 'wallet_invokeSnap',
+//               params: { snapId: defaultSnapOrigin, request: { method: 'borrowGHO',params:{
+//                 "borrowedTokenCount":serverResponse.amount
+//               } } },
+//             });
+
+//             if(res!=null){
+//               const borrowGHOStatus = await payment.borrowGHO(res.borrowedTokenCount);
+//               return;
+//             }
+//         }
+//     }
+//   }
+
+ 
+// }
+// else if(operation==='send_funds_to_address'){
+//   var res :any= await window.ethereum.request({
+//     method: 'wallet_invokeSnap',
+//     params: { snapId: defaultSnapOrigin, request: { method: 'sendGHO',params:{
+//       "sendTokenCount":serverResponse.amount,
+//       "receiver":serverResponse.receiver_address
+//     } } },
+//   });
+//   if(res!==null){
+//     //  var receiverAddress = await resolveENSAddress(serverResponse.receiver_address)
+
+//       await payment.sendGHO(res.receiver,res.sendTokenCount)
+//   }
+// }
+// else if(operation==='setup_recurring_payments'){
+//   var res :any= await window.ethereum.request({
+//     method: 'wallet_invokeSnap',
+//     params: { snapId: defaultSnapOrigin, request: { method: 'sendGHORecurring',params:{
+//       "amount":serverResponse.amount,
+//       "receiver_address":serverResponse.receiver_address,
+//       "frequency":serverResponse.frequency,
+//       "end_time":serverResponse.end_time,
+//     } } },
+    
+
+    
+//   });
+//   if(res!==null){
+
+//       await payment.setupRecurringPayment(serverResponse.receiver_address,serverResponse.amount,Number(serverResponse.frequency),Number(serverResponse.end_time));
+//   }
+// }
+// }
 //to be replaced by generic processing funcitonality
 export const handleButtonClick = async (userOperation:any) => {
   console.log("payment object before");

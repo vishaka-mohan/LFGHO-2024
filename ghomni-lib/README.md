@@ -1,4 +1,5 @@
-# LFGHO-2024
+# ghomni-lib
+
 # Description
 
 ghomni-lib is an abstracted toolkit to build using GHO including recurring payments, credit delegation, borrowing tokens etc.
@@ -63,6 +64,3 @@ const borrowGHOStatus = await payment.borrowGHO(tokensToBeBorrowed)
 ```console
   await payment.transferGHOCrossChain(amountToTransfer,receiverAddress)
 ```
-
-
-

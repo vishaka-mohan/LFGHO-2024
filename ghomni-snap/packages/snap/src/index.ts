@@ -45,7 +45,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
             ]),
           },
         });
-        
+
         return prompt;
 
       case 'borrowGHO':
@@ -114,6 +114,59 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
               return {
                 "operation":"supply",
                 "supplyTokenCount":supplyPayload.supplyTokenCount,
+              }
+            }
+            else{
+              return null;
+            }
+         case 'sendGHORecurring':
+          var payload :any = request.params;
+          var status= await snap.request({
+            method: 'snap_dialog',
+            params: {
+              type: 'confirmation',
+              content: panel([
+                heading(`Please review the payment setup`),
+                divider(),
+                text('Receiver :  ' + payload.receiver_address),
+                divider(),
+                text('Amount :  ' + payload.amount + "GHO tokens"),
+                divider(),
+                text('Pay every :  ' + payload.frequency + " seconds"),
+                divider(),
+                text('Pay for :  ' + payload.end_time + " seconds")
+              ]),
+            },
+          });
+          if(status===true){
+            return {
+              "operation":"sendGHORecurring",
+            }
+          }
+          else{
+            return null;
+          }
+          case 'transfer_crosschain':
+            var payload :any = request.params;
+            var status= await snap.request({
+              method: 'snap_dialog',
+              params: {
+                type: 'confirmation',
+                content: panel([
+                  heading(`Please review the cross chain payment setup`),
+                  divider(),
+                  text('Receiver :  ' + payload.address),
+                  divider(),
+                  text('Amount :  ' + payload.amount + "GHO tokens"),
+                  divider(),
+                  text('Chain ID:  ' + "421614"),
+                  divider(),
+                ]),
+              },
+            });
+            if(status===true){
+              return {
+                "operation":"transfer_crosschain",
               }
             }
             else{

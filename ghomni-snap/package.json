@@ -59,6 +59,10 @@
     }
   },
   "dependencies": {
-    "@metamask/keyring-api": "^2.0.0"
+    "@metamask/keyring-api": "^2.0.0",
+    "connectkit": "^1.6.0",
+    "react-loader-spinner": "^6.1.6",
+    "viem": "1.x",
+    "wagmi": "1.x"
   }
 }

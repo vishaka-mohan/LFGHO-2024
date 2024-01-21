@@ -5,6 +5,10 @@ import styled from 'styled-components';
 import { Footer, Header } from './components';
 import { GlobalStyle } from './config/theme';
 import { ToggleThemeContext } from './Root';
+import { WagmiConfig, createConfig } from 'wagmi';
+import { mainnet, polygon, optimism, arbitrum } from 'wagmi/chains';
+import { ConnectKitProvider, getDefaultConfig } from 'connectkit';
+
 
 const Wrapper = styled.div`
   display: flex;

@@ -102,7 +102,7 @@ export const BorrowGHOButton = (props: ComponentProps<typeof Button>) => {
   return <Button {...props}>Borrow GHO</Button>;
 };
 export const InstructButton = (props: ComponentProps<typeof Button>) => {
-  return <Button {...props}>Instruct</Button>;
+  return <Button {...props}>Click me</Button>;
 };
 export const SendGHOButton = (props: ComponentProps<typeof Button>) => {
   return <Button {...props}>Send GHO</Button>;
